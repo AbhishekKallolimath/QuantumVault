@@ -6,6 +6,7 @@ import streamlit as st
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives import serialization
 
+
 from crypto_engine import (
     generate_recipient_keypair,
     encrypt_message,
@@ -13,7 +14,12 @@ from crypto_engine import (
     tamper_with_ciphertext,
     encrypt_file,
     decrypt_file,
+    export_public_key,
+    export_encrypted_private_key,
+    import_public_key,
+    import_encrypted_private_key,
 )
+
 
 st.set_page_config(
     page_title="QuantumVault",
@@ -34,14 +40,17 @@ if "recipient_private_key" not in st.session_state:
 private_key = st.session_state.recipient_private_key
 public_key = private_key.public_key()
 
-secure_tab, intercept_tab, threat_tab, file_tab = st.tabs(
+
+secure_tab, intercept_tab, threat_tab, file_tab, key_tab = st.tabs(
     [
         "🔒 Secure Message",
         "🕵️ Interception Lab",
         "⚛️ Quantum Threat",
         "📁 File Encryption Lab",
+        "🔑 Key Management",
     ]
 )
+
 
 # --------------------------------------------------
 # TAB 1: SECURE MESSAGE
@@ -264,6 +273,170 @@ with file_tab:
                 mime="application/octet-stream",
                 key="download_decrypted_file",
             )
+
+
+
+
+
+# --------------------------------------------------
+# TAB 5: KEY MANAGEMENT
+# --------------------------------------------------
+with key_tab:
+    st.subheader("Cryptographic Key Management")
+    st.write(
+        "Export your keys for backup or import previously saved keys."
+    )
+
+    st.warning(
+        "Keep your private key confidential. Never upload it to GitHub "
+        "or share it with anyone."
+    )
+
+    # ----------------------------------------------
+    # EXPORT KEYS
+    # ----------------------------------------------
+    st.markdown("### Export current keys")
+
+    password = st.text_input(
+        "Set a password for your private-key backup",
+        type="password",
+        key="export_key_password",
+        help="Use at least 8 characters.",
+    )
+
+    confirm_password = st.text_input(
+        "Confirm password",
+        type="password",
+        key="confirm_key_password",
+    )
+
+    if st.button("Prepare Key Downloads", key="prepare_key_downloads"):
+        if len(password) < 8:
+            st.error("Password must contain at least 8 characters.")
+
+        elif password != confirm_password:
+            st.error("The passwords do not match.")
+
+        else:
+            try:
+                exported_public = export_public_key(public_key)
+                exported_private = export_encrypted_private_key(
+                    private_key, password
+                )
+
+                st.session_state["exported_public_key"] = exported_public
+                st.session_state["exported_private_key"] = exported_private
+
+                st.success("Your key backups are ready.")
+
+            except Exception:
+                st.error("Key export failed. Please check the key implementation.")
+
+    if (
+        "exported_public_key" in st.session_state
+        and "exported_private_key" in st.session_state
+    ):
+        st.download_button(
+            "Download Public Key",
+            data=st.session_state["exported_public_key"],
+            file_name="quantumvault_public.der",
+            mime="application/octet-stream",
+            key="download_public_key",
+        )
+
+        st.download_button(
+            "Download Password-Protected Private Key",
+            data=st.session_state["exported_private_key"],
+            file_name="quantumvault_private.pem",
+            mime="application/octet-stream",
+            key="download_private_key",
+        )
+
+    st.divider()
+
+    # ----------------------------------------------
+    # IMPORT KEYS
+    # ----------------------------------------------
+    st.markdown("### Import saved keys")
+
+    uploaded_public_key = st.file_uploader(
+        "Upload public key (.der)",
+        key="import_public_key_file",
+    )
+
+    uploaded_private_key = st.file_uploader(
+        "Upload encrypted private key (.pem)",
+        key="import_private_key_file",
+    )
+
+    import_password = st.text_input(
+        "Private-key backup password",
+        type="password",
+        key="import_key_password",
+    )
+
+    if st.button("Import and Activate Keys", key="activate_imported_keys"):
+        if uploaded_public_key is None or uploaded_private_key is None:
+            st.error("Please upload both key files.")
+
+        elif not import_password:
+            st.error("Enter the private-key backup password.")
+
+        else:
+            try:
+                new_public_key = import_public_key(
+                    uploaded_public_key.getvalue()
+                )
+
+                new_private_key = import_encrypted_private_key(
+                    uploaded_private_key.getvalue(),
+                    import_password,
+                )
+
+                # Verify that the uploaded keys belong together.
+                test_message = "QuantumVault key-pair verification"
+
+                test_envelope = encrypt_message(
+                    test_message,
+                    new_public_key,
+                )
+
+                recovered_message = decrypt_message(
+                    test_envelope,
+                    new_private_key,
+                )
+
+                if recovered_message != test_message:
+                    raise ValueError("The uploaded keys do not match.")
+
+                # Activate the verified private key.
+                st.session_state["recipient_private_key"] = new_private_key
+
+                # Remove results associated with the previous key.
+                keys_to_clear = [
+                    "message_envelope",
+                    "tampered_envelope",
+                    "file_envelope",
+                    "decrypted_file_bytes",
+                    "decrypted_filename",
+                    "exported_public_key",
+                    "exported_private_key",
+                ]
+
+                for key in keys_to_clear:
+                    st.session_state.pop(key, None)
+
+                st.success(
+                    "Keys imported and verified. The new key pair is active."
+                )
+
+                st.rerun()
+
+            except Exception:
+                st.error(
+                    "Key import failed. Check the key files and password, "
+                    "and make sure the public and private keys match."
+                )
 
 
 # --------------------------------------------------

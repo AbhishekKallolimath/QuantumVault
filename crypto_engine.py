@@ -44,14 +44,16 @@ def generate_recipient_keypair():
     """Generate the recipient's ML-KEM-768 private key."""
     return mlkem.MLKEM768PrivateKey.generate()
 
+
 def export_public_key(public_key) -> bytes:
-    """Export the recipient's public key in PEM format."""
+    """Export the recipient's public key."""
     from cryptography.hazmat.primitives import serialization
 
     return public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.PEM,
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
+
 
 
 def export_encrypted_private_key(private_key, password: str) -> bytes:
@@ -72,16 +74,18 @@ def export_encrypted_private_key(private_key, password: str) -> bytes:
     )
 
 
-def import_public_key(pem_data: bytes):
-    """Load a recipient's public key from PEM data."""
+
+def import_public_key(key_data: bytes):
+    """Load a recipient's public key from DER data."""
     from cryptography.hazmat.primitives import serialization
 
-    key = serialization.load_pem_public_key(pem_data)
+    key = serialization.load_der_public_key(key_data)
 
     if not isinstance(key, mlkem.MLKEM768PublicKey):
         raise ValueError("The file does not contain an ML-KEM-768 public key.")
 
     return key
+
 
 
 def import_encrypted_private_key(pem_data: bytes, password: str):
