@@ -1,0 +1,5 @@
+message_size_bytes,repetitions,encryption_median_ms,decryption_median_ms,verification
+100,10,0.7016,0.4886,passed
+1024,10,0.1515,0.1737,passed
+10240,10,0.3293,0.407,passed
+102400,10,1.25,1.7557,passed
