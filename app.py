@@ -5,7 +5,8 @@ import streamlit as st
 
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives import serialization
-
+from security_evaluator import evaluate_security
+from performance_dashboard import render_performance_dashboard
 
 from crypto_engine import (
     generate_recipient_keypair,
@@ -41,15 +42,19 @@ private_key = st.session_state.recipient_private_key
 public_key = private_key.public_key()
 
 
-secure_tab, intercept_tab, threat_tab, file_tab, key_tab = st.tabs(
+
+secure_tab, intercept_tab, threat_tab, file_tab, key_tab, security_tab, performance_tab = st.tabs(
     [
         "🔒 Secure Message",
         "🕵️ Interception Lab",
         "⚛️ Quantum Threat",
         "📁 File Encryption Lab",
         "🔑 Key Management",
+        "🛡️ Security Evaluation",
+        "📊 Performance Dashboard",
     ]
 )
+
 
 
 # --------------------------------------------------
@@ -438,6 +443,79 @@ with key_tab:
                     "and make sure the public and private keys match."
                 )
 
+
+# --------------------------------------------------
+# TAB 6: SECURITY EVALUATION
+# --------------------------------------------------
+
+with security_tab:
+    st.subheader("🛡️ Automated Security Evaluation")
+
+    st.write(
+        "Run controlled tests to check whether QuantumVault "
+        "rejects tampered data, incorrect keys, and invalid envelopes."
+    )
+
+    st.warning(
+        "These checks demonstrate selected security properties. "
+        "They are not a complete security audit."
+    )
+
+    if st.button("▶️ Run Security Evaluation", key="run_security_evaluation"):
+        try:
+            with st.spinner("Running security checks..."):
+                results = evaluate_security()
+
+            st.session_state["security_evaluation_results"] = results
+
+        except Exception as exc:
+            st.error(f"Security evaluation could not complete: {exc}")
+
+    if "security_evaluation_results" in st.session_state:
+        results = st.session_state["security_evaluation_results"]
+
+        passed = sum(
+            result["status"] == "PASSED"
+            for result in results
+        )
+        total = len(results)
+        failed = total - passed
+
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric("Total Checks", total)
+        col2.metric("Passed", passed)
+        col3.metric("Failed", failed)
+
+        if total > 0 and failed == 0:
+            st.success(f"All {passed} security checks passed.")
+        elif failed > 0:
+            st.error(f"{failed} security check(s) failed.")
+        else:
+            st.info("No security checks were returned.")
+
+        st.markdown("### Detailed Results")
+
+        st.dataframe(
+            results,
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        import pandas as pd
+
+        csv_data = pd.DataFrame(results).to_csv(index=False)
+
+        st.download_button(
+            "⬇️ Download Security Report (CSV)",
+            data=csv_data,
+            file_name="quantumvault_security_report.csv",
+            mime="text/csv",
+            key="download_security_report",
+        )
+
+with performance_tab:
+    render_performance_dashboard()
 
 # --------------------------------------------------
 # FOOTER
