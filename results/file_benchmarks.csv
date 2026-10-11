@@ -1,0 +1,5 @@
+file_size_bytes,repetitions,warmup_runs,encryption_median_ms,encryption_p95_ms,decryption_median_ms,decryption_p95_ms,encryption_throughput_mb_s,decryption_throughput_mb_s,verification
+1024,10,2,0.1461,0.29,0.1897,0.5113,6.6842,5.1479,passed
+10240,10,2,0.2318,0.294,0.2723,0.3125,42.1295,35.8635,passed
+102400,10,2,1.7094,2.9187,1.4189,3.4261,57.129,68.8253,passed
+1048576,10,2,11.2148,14.4973,11.565,15.2095,89.1679,86.4678,passed
