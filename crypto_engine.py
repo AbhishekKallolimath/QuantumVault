@@ -23,7 +23,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import mlkem
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-
+from cryptography.hazmat.primitives.asymmetric import mlkem
 
 # Domain separation: identifies keys derived for QuantumVault.
 KDF_INFO = b"QuantumVault-v1-AES-256-GCM"
