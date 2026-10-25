@@ -337,8 +337,8 @@ with threat_tab:
             unsafe_allow_html=True,
         )
     st.warning(
-        "QuantumVault is an educational prototype. It demonstrates post-quantum key "
-        "establishment, authenticated encryption and tampering detection; it is not a certified security product."
+        "QuantumVault is an prototype. It demonstrates post-quantum key "
+        "establishment, authenticated encryption and tampering detection."
     )
 
 # ------------------------- TAB 4: FILE ENCRYPTION -----------------------
